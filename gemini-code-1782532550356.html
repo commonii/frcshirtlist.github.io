@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRC Shirt Inventory - DEFCON Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* DEFCON PALETTE */
+  --bg: #00050a;     /* Deep radar black */
+  --s1: #000d1a;     /* Terminal base */
+  --s2: #001a33;     /* Highlight base */
+  --s3: #002b55;     /* Accent base */
+  --bd: #0066aa;     /* Dim wireframe */
+  --bd2: #00ffff;    /* Neon cyan active wireframe */
+  --tx: #00ffff;     /* Primary neon text */
+  --t2: #00aaaa;     /* Dimmer cyan */
+  --t3: #007777;     /* Background cyan */
+  --blue: #0088ff;
+  --blue2: #00aaff;
+  --green: #00ff00;
+  --amber: #ffaa00;
+  --red: #ff0000;
+  
+  /* SQUARED EDGES */
+  --r: 0px; 
+  --lg: 0px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family: 'Kremlin', 'Share Tech Mono', 'Courier New', monospace; 
+  background:var(--bg);
+  color:var(--tx);
+  min-height:100vh;
+  padding-bottom:3rem;
+  text-transform: uppercase; /* DEFCON styling */
+  letter-spacing: 0.05em;
+}
+
+/* CRT Scanline / Glow effect on text */
+h1, .tab.active, .stat-pill span, .l-num, .l-tname {
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.4);
+}
+
+/* ── HEADER ── */
+header{
+  border-bottom:1px solid var(--bd2);padding:.9rem 1.5rem;
+  display:flex;align-items:center;gap:.75rem;
+  position:sticky;top:0;background:rgba(0,5,10,.96);z-index:200;
+}
+.logo-mark{
+  width:32px;height:32px;background:transparent;border: 1px solid var(--tx);border-radius:0;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--tx);font-weight:700;letter-spacing:.02em;
+}
+header h1{font-size:1.1rem;font-weight:400;letter-spacing:.05em; color: var(--tx);}
+.header-sub{font-size:.7rem;color:var(--t2);margin-top:1px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.stat-pill{
+  background:var(--s1);border:1px solid var(--bd);border-radius:0;
+  padding:3px 10px;font-size:.75rem;color:var(--t2);white-space:nowrap;
+}
+.stat-pill span{color:var(--tx);font-weight:400}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--bd);padding:0 1.5rem; background: var(--s1);}
+.tab{
+  padding:.65rem 1rem;font-size:.9rem;font-weight:400;color:var(--t2);
+  border: 1px solid transparent; border-bottom: none;
+  cursor:pointer;transition:all .15s;margin-bottom:-1px;
+  display:flex;align-items:center;gap:5px;
+}
+.tab:hover{color:var(--tx); border-color: var(--bd);}
+.tab.active{color:var(--bg); background: var(--tx); border-color: var(--tx);}
+.tab-badge{
+  background:var(--bg);border:1px solid var(--bd);border-radius:0;
+  padding:1px 6px;font-size:.7rem;color:var(--t2);
+}
+.tab.active .tab-badge{background:var(--bg);border-color:var(--bg);color:var(--tx)}
+
+/* ── TOOLBAR ── */
+.toolbar{
+  padding:.85rem 1.5rem;display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;
+  border-bottom:1px solid var(--bd); background: var(--bg);
+}
+.search-wrap{position:relative;flex:1;min-width:160px}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+.search-wrap input{
+  width:100%;background:var(--s1);border:1px solid var(--bd);border-radius:0;
+  color:var(--tx);padding:.44rem .65rem .44rem 2rem;font-size:.8rem;
+  font-family:inherit;outline:none;transition:border-color .15s;text-transform:uppercase;
+}
+.search-wrap input::placeholder{color:var(--t3)}
+.search-wrap input:focus{border-color:var(--tx); box-shadow: inset 0 0 5px rgba(0,255,255,0.2);}
+select{
+  background:var(--s1);border:1px solid var(--bd);border-radius:0;
+  color:var(--tx);padding:.44rem .65rem;font-size:.8rem;font-family:inherit;
+  outline:none;cursor:pointer;transition:border-color .15s;text-transform:uppercase;
+}
+select:hover{border-color:var(--tx)}
+select option{background:var(--bg); color: var(--tx);}
+.chip{
+  background:var(--s1);border:1px solid var(--bd);border-radius:0;
+  color:var(--t2);padding:.38rem .7rem;font-size:.8rem;cursor:pointer;
+  display:flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;user-select:none;
+}
+.chip:hover{border-color:var(--tx);color:var(--tx)}
+.chip.active-trade{border-color:var(--amber);color:var(--bg);background:var(--amber)}
+.chip.active-incoming{border-color:var(--green);color:var(--bg);background:var(--green)}
+.refresh-btn{
+  background:var(--s1);border:1px solid var(--bd);border-radius:0;color:var(--tx);
+  padding:.38rem .6rem;cursor:pointer;display:flex;align-items:center;gap:4px;
+  font-size:.8rem;font-family:inherit;transition:all .15s;text-transform:uppercase;
+}
+.refresh-btn:hover{border-color:var(--tx); background:rgba(0,255,255,0.1);}
+.spinning{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LOADING / ERROR ── */
+.loading-state{text-align:center;padding:4rem 2rem;color:var(--tx)}
+.loading-state svg{animation:spin .8s linear infinite;margin-bottom:1rem;}
+.error-state{
+  margin:1.5rem;padding:1rem 1.25rem;border-radius:0;
+  background:rgba(255,0,0,.1);border:1px solid var(--red);color:var(--red);font-size:.9rem;
+}
+.error-state strong{display:block;margin-bottom:.3rem}
+
+/* ── INVENTORY ── */
+.inventory{padding:1.25rem 1.5rem}
+
+/* ── LIST VIEW ── */
+.list-view{border:1px solid var(--bd);border-radius:0;overflow:hidden; background:var(--s1);}
+
+.list-header,.list-row{display:grid;grid-template-columns:46px 54px 1.2fr 1fr 80px 65px 70px 72px 62px 38px;gap:.35rem;padding:0 .85rem}
+.list-header{align-items:center;background:var(--s2);border-bottom:1px solid var(--bd2);padding-top:.6rem;padding-bottom:.6rem}
+.list-row{align-items:start;padding-top:.6rem;padding-bottom:.6rem;}
+
+.list-group {border-bottom:1px solid var(--bd);transition:background .1s}
+.list-group:last-child {border-bottom:none}
+.list-group:hover {background:rgba(0,255,255,0.05);}
+.list-group.grayed {opacity:.45;filter:grayscale(.8)}
+
+.list-regionals {
+  padding: 0 0.85rem 0.75rem 6.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.regional-chip {
+  background: transparent;
+  border: 1px solid var(--bd);
+  padding: 3px 8px;
+  border-radius: 0;
+  font-size: 0.7rem;
+  color: var(--t2);
+  white-space: nowrap;
+}
+.regional-chip.won {
+  background: rgba(0,255,255,0.1);
+  border-color: var(--tx);
+  color: var(--tx);
+}
+
+.l-record{font-size:.75rem;white-space:nowrap}
+.l-city{font-size:.75rem;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── AGE BADGE COLORS ── */
+.age-badge{display:inline-flex;align-items:center;gap:3px;border-radius:0;padding:2px 6px;font-size:.7rem;white-space:nowrap;}
+.age-rookie {background:transparent;color:var(--amber);border:1px solid var(--amber)}
+.age-1-5    {background:transparent;color:var(--red);border:1px solid var(--red)}
+.age-6-10   {background:transparent;color:var(--blue2);border:1px solid var(--blue2)}
+.age-11-15  {background:transparent;color:var(--green);border:1px solid var(--green)}
+.age-16-20  {background:transparent;color:#c084fc;border:1px solid #c084fc}
+.age-20plus {background:transparent;color:var(--t2);border:1px solid var(--t2)}
+
+.age-legend{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.45rem 1.5rem;border-bottom:1px solid var(--bd);font-size:.75rem;color:var(--tx)}
+.age-legend-label{color:var(--tx);margin-right:.2rem;text-transform:uppercase;font-size:.75rem}
+.col-h{font-size:.8rem;color:var(--tx);text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap}
+.col-h:hover{color:#fff; text-shadow:0 0 5px #fff;}
+
+.l-swatch{width:34px;height:34px;border-radius:0; border: 1px solid var(--bd); display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;flex-shrink:0; background:var(--bg); transition: background 0.3s;}
+.l-swatch img{width:30px;height:30px;object-fit:contain;position:relative;z-index:1}
+.l-fb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(0,255,255,.5)}
+.l-num{font-size:.85rem;color:var(--tx)}
+.l-names{min-width:0}
+.l-iname{font-size:.75rem;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l-tname{font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; color: var(--tx);}
+.l-season{font-size:.75rem;color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.l-cell{font-size:.8rem;color:var(--t2);white-space:nowrap}
+.l-cell-year{font-size:.8rem;color:var(--t2)}
+.l-game{font-size:.65rem;color:var(--t3);line-height:1.25;margin-top:2px;white-space:normal}
+
+.l-valbar{display:flex;align-items:center;gap:.3rem}
+.l-vb{flex:1;height:5px;border: 1px solid var(--bd);background:transparent;}
+.l-vf{height:100%;}
+.l-vn{font-size:.75rem;color:var(--tx);white-space:nowrap}
+.l-actions{display:flex;gap:3px;justify-content:flex-end}
+.icon-btn{background:transparent;border:1px solid var(--bd);border-radius:0;color:var(--tx);width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all .15s; text-decoration:none;}
+.icon-btn:hover{border-color:var(--tx);background:var(--tx);color:var(--bg)}
+
+/* ── TRADES TAB ── */
+.trades-wrap{padding:1.25rem 1.5rem}
+.trades-table{border:1px solid var(--bd);border-radius:0;overflow:hidden; background:var(--s1);}
+.tt-header,.tt-row{display:grid;grid-template-columns:100px 1fr 1fr 140px 140px 1fr;gap:.4rem;padding:.6rem .9rem;align-items:start}
+.tt-header{background:var(--s2);border-bottom:1px solid var(--bd2)}
+.tt-col{font-size:.8rem;color:var(--tx);text-transform:uppercase;}
+.tt-row{border-bottom:1px solid var(--bd);transition:background .1s}
+.tt-row:last-child{border-bottom:none}
+.tt-row:hover{background:rgba(0,255,255,0.05)}
+.tt-date{font-size:.8rem;color:var(--tx)}
+.tt-item{font-size:.8rem;color:var(--tx);line-height:1.35}
+.tt-person{font-size:.8rem;color:var(--t2)}
+.tt-event{font-size:.8rem;color:var(--t2)}
+.tt-notes{font-size:.75rem;color:var(--t3);line-height:1.4}
+.no-trades{text-align:center;padding:3.5rem 2rem;color:var(--tx)}
+.no-trades svg{opacity:.5;margin-bottom:.75rem; color: var(--tx)}
+.no-trades h3{font-size:1rem;color:var(--tx);margin-bottom:.3rem; text-shadow:0 0 3px var(--tx)}
+.no-trades p{font-size:.8rem; color: var(--t2)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:4.5rem 2rem;color:var(--tx)}
+.empty svg{opacity:.5;margin-bottom:.9rem; color: var(--tx)}
+.empty h3{font-size:1rem;color:var(--tx);margin-bottom:.35rem; text-shadow: 0 0 3px var(--tx)}
+.empty p{font-size:.8rem; color: var(--t2)}
+
+/* ── SUMMARY BAR ── */
+.summary-bar{padding:.55rem 1.5rem;border-top:1px solid var(--bd2);display:flex;gap:1.25rem;font-size:.8rem;color:var(--t2);flex-wrap:wrap;position:fixed;bottom:0;left:0;right:0;background:var(--bg);align-items:center}
+.summary-bar span{color:var(--tx);}
+.last-sync{margin-left:auto;font-size:.75rem;color:var(--t3)}
+
+@media(max-width:800px){
+  .list-header,.list-row{grid-template-columns:36px 44px 1fr 50px 60px}
+  .list-header>:nth-child(n+6),.list-row>:nth-child(n+6){display:none}
+  .list-regionals{padding-left: 1rem;}
+  .tt-header,.tt-row{grid-template-columns:85px 1fr 1fr}
+  .tt-header>:nth-child(n+4),.tt-row>:nth-child(n+4){display:none}
+  .age-legend{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">SYS</div>
+  <div>
+    <h1>INVENTORY UPLINK</h1>
+    <div class="header-sub">FRC LOGISTICS TRACKER // V2.0</div>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill">ASSETS: <span id="hTotal">—</span></div>
+    <div class="stat-pill">VALUE <span id="hAvg">—</span></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" id="tab-inv" onclick="switchTab('inventory')">
+    INVENTORY <span class="tab-badge" id="inv-badge">0</span>
+  </div>
+  <div class="tab" id="tab-trades" onclick="switchTab('trades')">
+    COMM LOG <span class="tab-badge" id="trade-badge">0</span>
+  </div>
+</div>
+
+<div id="pane-inventory">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="QUERY DATABASE...">
+    </div>
+    <select id="sizeFilter"><option value="">ALL SIZES</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select>
+    <select id="yearFilter"><option value="">ALL YEARS</option></select>
+    <select id="sortBy">
+      <option value="num-asc">TEAM # ASC</option>
+      <option value="num-desc">TEAM # DESC</option>
+      <option value="name-asc">NAME A–Z</option>
+      <option value="value-desc">RATING DESC</option>
+      <option value="year-desc">YEAR DESC</option>
+    </select>
+    <div class="chip" id="tradeChip" onclick="toggleFilter('trade')">⇄ FOR TRADE</div>
+    <div class="chip" id="incomingChip" onclick="toggleFilter('incoming')">↓ INCOMING</div>
+    <button class="refresh-btn" onclick="loadAll()" title="Refresh from sheet">
+      <svg id="refreshIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      SYNC DATA
+    </button>
+  </div>
+
+  <div class="age-legend">
+    <span class="age-legend-label">STATUS:</span>
+    <span class="age-badge age-rookie">★ ROOKIE</span>
+    <span class="age-badge age-1-5">1–5 YRS</span>
+    <span class="age-badge age-6-10">6–10 YRS</span>
+    <span class="age-badge age-11-15">11–15 YRS</span>
+    <span class="age-badge age-16-20">16–20 YRS</span>
+    <span class="age-badge age-20plus">20+ YRS</span>
+  </div>
+
+  <div class="inventory" id="invPane">
+    <div class="loading-state" id="invLoading">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <div style="font-size:.9rem;color:var(--tx);margin-top:.5rem">ESTABLISHING CONNECTION...</div>
+    </div>
+    <div class="error-state" id="invError" style="display:none">
+      <strong>CONNECTION FAILURE</strong>
+      <span id="invErrorMsg"></span>
+    </div>
+    <div class="list-view" id="shirtList" style="display:none"></div>
+    <div class="empty" id="emptyState" style="display:none">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/></svg>
+      <h3>NO DATA FOUND</h3>
+      <p>ADJUST QUERY PARAMETERS.</p>
+    </div>
+  </div>
+</div>
+
+<div id="pane-trades" style="display:none">
+  <div class="toolbar" style="justify-content:flex-end">
+    <div class="search-wrap" style="max-width:280px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="tradeSearch" placeholder="SEARCH LOGS…" oninput="renderTrades()">
+    </div>
+  </div>
+  <div class="trades-wrap">
+    <div class="loading-state" id="tradesLoading" style="display:none">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <div style="font-size:.9rem;color:var(--tx);margin-top:.5rem">DOWNLOADING LOGS...</div>
+    </div>
+    <div class="no-trades" id="noTrades" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      <h3>NO COMM LOGS FOUND</h3>
+      <p>UPLINK DIRECTLY TO GOOGLE SHEET TO APPEND.</p>
+    </div>
+    <div class="trades-table" id="tradesTable" style="display:none">
+      <div class="tt-header">
+        <div class="tt-col">TIMESTAMP</div>
+        <div class="tt-col">OUTBOUND</div>
+        <div class="tt-col">INBOUND</div>
+        <div class="tt-col">ENTITY</div>
+        <div class="tt-col">LOCATION</div>
+        <div class="tt-col">REMARKS</div>
+      </div>
+      <div id="tradesBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="summary-bar">
+  TRACKING <span id="showCount">0</span> OF <span id="totalBar">0</span> ASSETS
+  // OUTBOUND OFFERS: <span id="tradeBar">0</span>
+  // INBOUND TRANSITS: <span id="incomingBar">0</span>
+  <span class="last-sync" id="lastSync">AWAITING SYNC</span>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZ8pueeFXEveDLYlKpumZkQhll27wwwlspLRXEKbjemgjwJXEUkfrj1rxDb5cKMqR0/exec';
+const INV_TAB    = 'Inventory';
+const TRADES_TAB = 'Trades';
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let currentTab   = 'inventory';
+let sortField    = 'num-asc';
+let filterStatus = null;
+let shirts       = [];
+let trades       = [];
+const tbaTeamCache  = {}; 
+const tbaRecordCache= {}; 
+const tbaEventsCache= {}; 
+const TBA_YEARS     = [2025,2024,2023,2022];
+const tbaKey = '9oOVdy49EpUYYl1Ce22ZoPMLGpxQHd6sDNS4VhRR1Y2CViVd198VyyjljK3uoQ5i';
+
+// ─────────────────────────────────────────────────────────────
+// IMAGE COLOR EXTRACTION (CANVAS)
+// ─────────────────────────────────────────────────────────────
+function applyExtractedColor(img) {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = img.naturalWidth || img.width || 30;
+    canvas.height = img.naturalHeight || img.height || 30;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let r = 0, g = 0, b = 0, count = 0;
+    
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] > 128) { // Ignore highly transparent pixels
+        // Ignore pure white and pure black to find the "brand" color
+        const isWhite = data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240;
+        const isBlack = data[i] < 20 && data[i + 1] < 20 && data[i + 2] < 20;
+        if (!isWhite && !isBlack) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+      }
+    }
+    
+    if (count > 0) {
+      r = Math.floor(r / count);
+      g = Math.floor(g / count);
+      b = Math.floor(b / count);
+      
+      const swatch = img.closest('.l-swatch');
+      if (swatch) {
+        // Apply geometric linear gradient with the extracted color
+        swatch.style.background = `linear-gradient(135deg, rgb(${r},${g},${b}) 0%, var(--bg) 100%)`;
+        swatch.style.borderColor = `rgb(${r},${g},${b})`;
+      }
+    }
+  } catch (e) {
+    // CORS restricted image or canvas failure; fail silently to default styling
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// AGE BADGE HELPER
+// ─────────────────────────────────────────────────────────────
+const CURRENT_YEAR = new Date().getFullYear();
+function ageBadge(foundedYear){
+  if(!foundedYear) return '';
+  const age = CURRENT_YEAR - foundedYear;
+  if(age===0) return `<span class="age-badge age-rookie">★ ROOKIE</span>`;
+  if(age<=5)  return `<span class="age-badge age-1-5">${age} YR${age!==1?'S':''}</span>`;
+  if(age<=10) return `<span class="age-badge age-6-10">${age} YRS</span>`;
+  if(age<=15) return `<span class="age-badge age-11-15">${age} YRS</span>`;
+  if(age<=20) return `<span class="age-badge age-16-20">${age} YRS</span>`;
+  return `<span class="age-badge age-20plus">${age} YRS</span>`;
+}
+function recordHtml(rec){
+  if(!rec) return '<span style="color:var(--t3);font-size:.75rem">—</span>';
+  const {w,l,t} = rec;
+  const wc = w>l?'var(--green)':w<l?'var(--red)':'var(--t2)';
+  return `<span class="l-record"><span style="color:${wc}">${w}W</span><span style="color:var(--t3)">-</span><span style="color:var(--red)">${l}L</span>${t?`<span style="color:var(--t3)">-${t}T</span>`:''}</span>`;
+}
+
+function estimateRookieYear(num){
+  if(num<=32)    return 1992; if(num<=115)  return 1993;
+  if(num<=191)   return 1994; if(num<=290)  return 1995;
+  if(num<=379)   return 1996; if(num<=469)  return 1997;
+  if(num<=580)   return 1998; if(num<=701)  return 1999;
+  if(num<=885)   return 2000; if(num<=1100) return 2001;
+  if(num<=1270)  return 2002; if(num<=1500) return 2003;
+  if(num<=1700)  return 2004; if(num<=1900) return 2005;
+  if(num<=2100)  return 2006; if(num<=2400) return 2007;
+  if(num<=2700)  return 2008; if(num<=3100) return 2009;
+  if(num<=3600)  return 2010; if(num<=3800) return 2011;
+  if(num<=4200)  return 2012; if(num<=4600) return 2013;
+  if(num<=5000)  return 2014; if(num<=5600) return 2015;
+  if(num<=6000)  return 2016; if(num<=6600) return 2017;
+  if(num<=7100)  return 2018; if(num<=7700) return 2019;
+  if(num<=8800)  return 2022; if(num<=9400) return 2023;
+  if(num<=10200) return 2024;
+  return 2025;
+}
+
+const SEASONS = {
+  2026:"REBUILT",
+  2025:"REEFSCAPE",
+  2024:"CRESCENDO",
+  2023:"CHARGED UP",
+  2022:"RAPID REACT",
+  2021:"INFINITE RECHARGE",
+  2020:"INFINITE RECHARGE",
+  2019:"DEEP SPACE",
+  2018:"POWER UP",
+  2017:"STEAMWORKS",
+  2016:"STRONGHOLD",
+  2015:"RECYCLE RUSH"
+};
+
+// ─────────────────────────────────────────────────────────────
+// GOOGLE SHEETS FETCH
+// ─────────────────────────────────────────────────────────────
+async function fetchSheet(tabName){
+  const r = await fetch(`${APPS_SCRIPT_URL}?sheet=${encodeURIComponent(tabName)}`);
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  if(!Array.isArray(data)) throw new Error('DATA FORMAT UNEXPECTED.');
+  return data;
+}
+
+function parseInventory(rows){
+  return rows.slice(1).filter(r=>r.some(c=>c)).map((r,i)=>({
+    id:i+1,
+    num:   parseInt(r[0])||0,
+    name:  r[1]||'',
+    item:  r[2]||'',
+    size:  r[3]||'',
+    year:  parseInt(r[4])||null,
+    type:  r[5]||'',
+    value: Math.min(10,Math.max(0,parseFloat(r[6])||0)),
+    status:(r[7]||'own').toLowerCase().trim(),
+    logo:  r[8]||'',
+  })).filter(s=>s.num);
+}
+
+function parseTrades(rows){
+  return rows.slice(1).filter(r=>r.some(c=>c)).map((r,i)=>({
+    id:i+1,
+    date:      r[0]||'',
+    item_out:  r[1]||'',
+    item_in:   r[2]||'',
+    traded_with:r[3]||'',
+    event:     r[4]||'',
+    notes:     r[5]||'',
+  }));
+}
+
+async function loadAll(){
+  const icon=document.getElementById('refreshIcon');
+  icon.classList.add('spinning');
+  try{
+    const [invRows,tradeRows]=await Promise.all([
+      fetchSheet(INV_TAB),
+      fetchSheet(TRADES_TAB).catch(()=>null),
+    ]);
+    shirts=parseInventory(invRows);
+    trades=tradeRows?parseTrades(tradeRows):[];
+    
+    document.getElementById('invLoading').style.display='none';
+    document.getElementById('invError').style.display='none';
+    document.getElementById('lastSync').textContent='SYNCED @ '+new Date().toLocaleTimeString();
+    
+    render();
+    renderTrades();
+    fetchTbaTeams(shirts.map(s=>s.num)); 
+    fetchTbaRecords(shirts); 
+    fetchTbaEvents(shirts); 
+  }catch(e){
+    document.getElementById('invLoading').style.display='none';
+    document.getElementById('invError').style.display='block';
+    document.getElementById('invErrorMsg').textContent=' '+e.message;
+  }
+  icon.classList.remove('spinning');
+}
+
+// ─────────────────────────────────────────────────────────────
+// THE BLUE ALLIANCE API
+// ─────────────────────────────────────────────────────────────
+function tbaFetch(path){
+  return fetch(`https://www.thebluealliance.com/api/v3${path}`, {
+    headers: { 'X-TBA-Auth-Key': tbaKey }
+  });
+}
+
+async function fetchTbaTeams(nums){
+  const needed = nums.filter(n => n && !(n in tbaTeamCache));
+  if(!needed.length) return;
+  needed.forEach(n => tbaTeamCache[n] = undefined);
+  await Promise.allSettled(needed.map(async n => {
+    try {
+      const r = await tbaFetch(`/team/frc${n}/simple`);
+      if(r.ok){
+        const d = await r.json();
+        tbaTeamCache[n] = {
+          city:    [d.city, d.state_prov, d.country].filter(Boolean).join(', ').toUpperCase() || null,
+          founded: d.rookie_year || estimateRookieYear(n),
+        };
+      } else {
+        tbaTeamCache[n] = { city: null, founded: estimateRookieYear(n) };
+      }
+    } catch(e) {
+      tbaTeamCache[n] = { city: null, founded: estimateRookieYear(n) };
+    }
+    render();
+  }));
+}
+
+async function fetchTbaRecords(shirtList){
+  const pairs = [...new Map(
+    shirtList.filter(s=>s.year).map(s=>[`${s.num}_${s.year}`,{num:s.num,year:s.year}])
+  ).values()];
+  if(!pairs.length) return;
+  await Promise.allSettled(pairs.map(async ({num, year}) => {
+    const key = `${num}_${year}`;
+    if(key in tbaRecordCache) return;
+    tbaRecordCache[key] = undefined; 
+    try {
+      const r = await tbaFetch(`/team/frc${num}/matches/${year}/simple`);
+      if(r.ok){
+        const matches = await r.json();
+        let w=0, l=0, t=0;
+        for(const m of matches){
+          if(m.comp_level === 'pr') continue;
+          const alliance = m.alliances?.red?.team_keys?.includes(`frc${num}`) ? 'red' : 'blue';
+          const winner = m.winning_alliance;
+          if(!winner || winner==='') t++;
+          else if(winner===alliance) w++;
+          else l++;
+        }
+        tbaRecordCache[key] = {w,l,t};
+      } else {
+        tbaRecordCache[key] = null;
+      }
+    } catch(e) {
+      tbaRecordCache[key] = null;
+    }
+    render();
+  }));
+}
+
+async function fetchTbaEvents(shirtList){
+  const pairs = [...new Map(
+    shirtList.filter(s=>s.year).map(s=>[`${s.num}_${s.year}`,{num:s.num,year:s.year}])
+  ).values()];
+  if(!pairs.length) return;
+  await Promise.allSettled(pairs.map(async ({num, year}) => {
+    const key = `${num}_${year}`;
+    if(key in tbaEventsCache) return;
+    tbaEventsCache[key] = undefined; 
+    try {
+      const [evR, stR] = await Promise.all([
+        tbaFetch(`/team/frc${num}/events/${year}/simple`),
+        tbaFetch(`/team/frc${num}/events/${year}/statuses`),
+      ]);
+      if(!evR.ok){ tbaEventsCache[key] = null; render(); return; }
+      const events   = await evR.json();
+      const statuses = stR.ok ? await stR.json() : {};
+      
+      const comp = events.filter(e => e.event_type < 99);
+      tbaEventsCache[key] = comp.map(e => {
+        const st = statuses[e.key];
+        const won = st?.playoff?.status === 'won';
+        return { name: (e.short_name || e.name).toUpperCase(), key: e.key, won };
+      }).sort((a,b) => a.name.localeCompare(b.name));
+    } catch(e) {
+      tbaEventsCache[key] = null;
+    }
+    render();
+  }));
+}
+
+function firstLogo(num,custom){return custom&&custom.trim()?custom.trim():tbaUrl(num,2025);}
+function handleLogoErr(img,num,custom){
+  if(custom&&custom.trim()){imgFallback(img);return;}
+  const m=img.src.match(/avatar\/(\d+)\/frc/);
+  if(m){const yr=parseInt(m[1]),idx=TBA_YEARS.indexOf(yr);if(idx<TBA_YEARS.length-1){img.src=tbaUrl(num,TBA_YEARS[idx+1]);return;}}
+  imgFallback(img);
+}
+function imgFallback(img){img.style.display='none';const f=img.nextElementSibling;if(f)f.style.display='flex';}
+function logoImgHtml(num,custom,cls,sz){
+  const s=sz||62;
+  // Removed crossorigin="anonymous" to stop the browser from blocking the image load.
+  return `<img src="${firstLogo(num,custom)}" class="${cls}" width="${s}" height="${s}" loading="lazy"
+    onload="applyExtractedColor(this)"
+    onerror="handleLogoErr(this,${num},'${(custom||'').replace(/'/g,'\\\'')}')" alt="#${num}">`;
+}
+function tbaUrl(num, yr){
+  return `https://www.thebluealliance.com/avatar/${yr}/frc${num}.png`;
+}
+
+function valColor(v){
+  if(v>=8) return 'var(--green)';
+  if(v>=5) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+// ─────────────────────────────────────────────────────────────
+// FILTER / SORT
+// ─────────────────────────────────────────────────────────────
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const sz=document.getElementById('sizeFilter').value;
+  const yr=document.getElementById('yearFilter').value;
+  let data=shirts.filter(s=>{
+    if(q&&!String(s.num).includes(q)&&!s.name.toLowerCase().includes(q)&&!s.item.toLowerCase().includes(q)) return false;
+    if(sz&&s.size!==sz) return false;
+    if(yr&&String(s.year)!==yr) return false;
+    if(filterStatus&&s.status!==filterStatus) return false;
+    return true;
+  });
+  const [f,d]=sortField.split('-');
+  data.sort((a,b)=>{
+    let av,bv;
+    if(f==='num')  {av=a.num;bv=b.num;}
+    else if(f==='name'){av=a.name.toLowerCase();bv=b.name.toLowerCase();}
+    else if(f==='value'){av=a.value;bv=b.value;}
+    else if(f==='year'){av=a.year||0;bv=b.year||0;}
+    if(av<bv) return d==='asc'?-1:1;
+    if(av>bv) return d==='asc'?1:-1;
+    return 0;
+  });
+  return data;
+}
+function populateYears(){
+  const sel=document.getElementById('yearFilter'),cur=sel.value;
+  const yrs=[...new Set(shirts.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a);
+  sel.innerHTML='<option value="">ALL YEARS</option>'+yrs.map(y=>`<option value="${y}"${String(cur)===String(y)?'selected':''}>${y}</option>`).join('');
+}
+function toggleFilter(s){
+  filterStatus=filterStatus===s?null:s;
+  document.getElementById('tradeChip').className='chip'+(filterStatus==='trade'?' active-trade':'');
+  document.getElementById('incomingChip').className='chip'+(filterStatus==='incoming'?' active-incoming':'');
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER INVENTORY
+// ─────────────────────────────────────────────────────────────
+function render(){
+  const data=getFiltered();
+  const trCnt=shirts.filter(s=>s.status==='trade').length;
+  const inCnt=shirts.filter(s=>s.status==='incoming').length;
+  const avg=shirts.length?+(shirts.reduce((s,x)=>s+x.value,0)/shirts.length).toFixed(1):0;
+
+  document.getElementById('hTotal').textContent=shirts.length;
+  document.getElementById('hAvg').textContent=avg+'/10';
+  document.getElementById('inv-badge').textContent=shirts.length;
+  document.getElementById('showCount').textContent=data.length;
+  document.getElementById('totalBar').textContent=shirts.length;
+  document.getElementById('tradeBar').textContent=trCnt;
+  document.getElementById('incomingBar').textContent=inCnt;
+  populateYears();
+
+  const list=document.getElementById('shirtList');
+  const empty=document.getElementById('emptyState');
+
+  if(!data.length){list.style.display='none';empty.style.display='block';return;}
+  empty.style.display='none';list.style.display='block';
+
+  list.innerHTML=`
+    <div class="list-header">
+      <div></div>
+      <div class="col-h" onclick="setSort('num')">TEAM #</div>
+      <div class="col-h" onclick="setSort('name')">ENTITY / ASSET</div>
+      <div class="col-h">COORD</div>
+      <div class="col-h" onclick="setSort('year')">YEAR</div>
+      <div class="col-h">CLASS</div>
+      <div class="col-h">RECORD</div>
+      <div class="col-h" onclick="setSort('value')">VALUE</div>
+      <div class="col-h">STATE</div>
+      <div></div>
+    </div>
+    ${data.map(s=>{
+      const gray=s.status==='trade'||s.status==='incoming';
+      const info    = tbaTeamCache[s.num];
+      const city    = info?.city ?? null;
+      const founded = info?.founded ?? estimateRookieYear(s.num);
+      const recKey  = `${s.num}_${s.year}`;
+      const rec     = s.year ? tbaRecordCache[recKey] : undefined;
+      const evs     = s.year ? tbaEventsCache[`${s.num}_${s.year}`] : undefined;
+
+      return `
+      <div class="list-group ${gray?' grayed':''}">
+        <div class="list-row">
+          <div class="l-swatch">
+            <div class="l-fb">#${s.num}</div>
+            ${logoImgHtml(s.num,s.logo,'',30)}
+          </div>
+          <div class="l-num">#${s.num}</div>
+          <div class="l-names">
+            ${s.item?`<div class="l-iname">${s.item}</div>`:''}
+            <div class="l-tname">${s.name}</div>
+            <div style="margin-top:3px">${ageBadge(founded)}<span style="font-size:.65rem;color:var(--t3);margin-left:4px">EST. ${founded}</span></div>
+          </div>
+          <div class="l-city">${city?`📍 ${city}`:info===undefined?'<span style="opacity:.3;font-size:.7rem">SCANNING…</span>':'<span style="color:var(--t3)">—</span>'}</div>
+          <div class="l-cell-year" style="padding-top:.15rem">
+            ${s.year||'—'}
+            ${s.year&&SEASONS[s.year]?`<div class="l-game">${SEASONS[s.year]}</div>`:''}
+          </div>
+          <div class="l-cell" style="font-size:.75rem">${s.type||'—'}</div>
+          <div>${rec===undefined?(s.year?'<span style="opacity:.3;font-size:.7rem">SCANNING…</span>':'<span style="color:var(--t3);font-size:.75rem">—</span>'):recordHtml(rec)}</div>
+          <div class="l-valbar">
+            <div class="l-vb"><div class="l-vf" style="width:${Math.round((s.value/10)*100)}%;background:${valColor(s.value)}"></div></div>
+            <span class="l-vn">${s.value}/10</span>
+          </div>
+          <div class="l-cell">
+            ${s.status==='trade'?'<span style="color:var(--bg);background:var(--amber);padding:1px 4px;">⇄ TRADE</span>':
+              s.status==='incoming'?'<span style="color:var(--bg);background:var(--green);padding:1px 4px;">↓ IN</span>':
+              '<span style="color:var(--tx);font-size:.75rem">✓ SECURED</span>'}
+          </div>
+          <div class="l-actions">
+            <a href="https://www.thebluealliance.com/team/${s.num}" target="_blank" rel="noopener" class="icon-btn" title="View team #${s.num} on The Blue Alliance">
+              <span style="font-weight:700;font-size:10px">TBA</span>
+            </a>
+          </div>
+        </div>
+        ${evs && evs.length ? `
+        <div class="list-regionals">
+          ${evs.map(e=>`<div class="regional-chip ${e.won ? 'won' : ''}">${e.won?'🏆 ':''}${e.name}</div>`).join('')}
+        </div>
+        ` : (!evs && evs !== null && s.year ? `<div class="list-regionals" style="opacity:.3; font-size:0.7rem">SCANNING THEATER LOGS…</div>` : '')}
+      </div>`;
+    }).join('')}`;
+}
+
+function setSort(f){
+  const cur=sortField;
+  sortField=cur.startsWith(f)?f+(cur.endsWith('asc')?'-desc':'-asc'):f+'-asc';
+  document.getElementById('sortBy').value=sortField;
+  render();
+}
+document.getElementById('sortBy').addEventListener('change',e=>{sortField=e.target.value;render();});
+document.getElementById('searchInput').addEventListener('input',render);
+document.getElementById('sizeFilter').addEventListener('change',render);
+document.getElementById('yearFilter').addEventListener('change',e=>{
+  render();
+});
+
+// ─────────────────────────────────────────────────────────────
+// RENDER TRADES
+// ─────────────────────────────────────────────────────────────
+function renderTrades(){
+  const q=(document.getElementById('tradeSearch').value||'').toLowerCase();
+  const filtered=trades.filter(t=>!q||[t.item_out,t.item_in,t.traded_with,t.event,t.notes].some(v=>v.toLowerCase().includes(q)));
+  document.getElementById('trade-badge').textContent=trades.length;
+  const table=document.getElementById('tradesTable');
+  const none=document.getElementById('noTrades');
+  if(!filtered.length){table.style.display='none';none.style.display='block';return;}
+  none.style.display='none';table.style.display='block';
+  document.getElementById('tradesBody').innerHTML=filtered.map(t=>`
+    <div class="tt-row">
+      <div class="tt-date">${t.date||'—'}</div>
+      <div class="tt-item" style="color:var(--red)">${t.item_out||'—'}</div>
+      <div class="tt-item" style="color:var(--green)">${t.item_in||'—'}</div>
+      <div class="tt-person">${t.traded_with||'—'}</div>
+      <div class="tt-event">${t.event||'—'}</div>
+      <div class="tt-notes">${t.notes||'—'}</div>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────────────────
+function switchTab(t){
+  currentTab=t;
+  document.getElementById('pane-inventory').style.display=t==='inventory'?'':'none';
+  document.getElementById('pane-trades').style.display=t==='trades'?'':'none';
+  document.getElementById('tab-inv').className='tab'+(t==='inventory'?' active':'');
+  document.getElementById('tab-trades').className='tab'+(t==='trades'?' active':'');
+}
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+loadAll();
+</script>
+</body>
+</html>
